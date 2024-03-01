@@ -754,22 +754,24 @@ def define_candidates(dataframe):
   df_dist_init.reset_index(inplace=True, drop=True)
 
   # Extract the centroid coordinates into a NumPy array
-  coords = df_dist_init['centroid'].to_numpy()
+  coords = df_dist_init.loc[:,'centroid']
 
   # Calculate the pairwise distances between all particles
-  distance_matrix = cdist(coords, coords)
+  distance_matrix =cdist(coords.tolist(), coords.tolist())
 
   # Find the indices of the three closest neighbors (excluding itself) for each particle
-  closest_indices = distance_matrix.argsort(axis=1)[:, 1:4]
+  idx = distance_matrix.argsort(axis=1)
 
   # Create a 'candidate' column to store potential dumbbell pairs as tuples
   df_dist_init['candidate'] = ''
 
+
   # Assign potential dumbbell pairs (index of particle 1, index of particle 2, index of particle 3)
   for row in range(df_dist_init.shape[0]):
-    df_dist_init.loc[row, 'candidate'] = tuple(closest_indices[row])
-
+      df_dist_init.loc[row,'candidate'] = tuple( ([idx[row,1]],[idx[row,2]],[idx[row,3]]) )
+  
   return df_dist_init
+
 
 
 
