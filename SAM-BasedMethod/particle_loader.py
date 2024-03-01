@@ -113,7 +113,7 @@ class Particle_Dataset:
     unique_white, counts_white = np.unique(i, return_counts=True)
     # print(sample.split('_')[1],sample.split('_'))
     # Determine the index based on particle type
-    if sample.split('_')[1] != '59':
+    if sample.split('_')[0].split(' ')[1] != '59':
       return unique_white[0]  # Return the first white pixel index for non-spherical particles
     else:
       return list(counts_white).index(max(counts_white))  # Return the index of the most frequent white pixel for spheres
