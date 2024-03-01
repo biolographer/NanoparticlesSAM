@@ -399,21 +399,23 @@ def define_id_particle_from_regionprops(sam_df):
   df_dist.reset_index(inplace=True, drop=True)
 
   # Extract coordinates and calculate pairwise distances
-  coords = df_dist['centroid'].tolist()
-  distance_matrix = cdist(coords, coords, metric='euclidean')
-
+  coords = df_dist.loc[:,'centroid']
+  distance_matrix =cdist(coords.tolist(), coords.tolist())
   # Find nearest neighbors (top 3) for each particle
-  candidate_indices = distance_matrix.argsort(axis=1)[:, :3]
+  idx = distance_matrix.argsort(axis=1)
 
-  # Create empty columns for candidate IDs and total distances
-  df_dist['candidate'] = ''
-  df_dist['sum_dist'] = 0.0
 
-  # Assign candidate IDs and calculate total distances
+  df_dist['candidate'] =''
   for row in range(df_dist.shape[0]):
-    candidates = candidate_indices[row]
-    df_dist.loc[row, 'candidate'] = tuple(candidates)
-    df_dist.loc[row, 'sum_dist'] = np.sum(distance_matrix[row, candidates])
+      df_dist.loc[row,'candidate'] = tuple( ([idx[row,0]],[idx[row,1]],[idx[row,2]]) )
+  
+  # Assign candidate IDs and calculate total distances
+  df_dist['sum_dist'] =''
+  for row in range(df_dist.shape[0]):
+      i,j,k = df_dist.loc[row,'candidate']
+      df_dist.loc[row,'sum_dist'] =np.sum( [distance_matrix[row,i],distance_matrix[row,j],distance_matrix[row,k] ])
+
+
 
   # Sort by total distance (potentially indicating stronger grouping)
   df_sorted = df_dist.sort_values('sum_dist')
@@ -425,32 +427,37 @@ def define_id_particle_from_regionprops(sam_df):
     min_dist = row['sum_dist']
     best_cand = candidate
 
-    for i in range(df_sorted.shape[0]):
-      other_cand = tuple(df_sorted.loc[i, 'candidate'])
-      if set([index]).intersection(set(other_cand)):
-        other_dist = df_sorted.loc[i, 'sum_dist']
-        if other_dist < min_dist:
-          min_dist = other_dist
-          best_cand = other_cand
+    for i_2 in range(df_sorted.shape[0]):
+      cand = df_sorted.loc[i_2,'candidate']
+      distance = df_sorted.loc[i_2,'sum_dist']
+      #check intersection
+      if set([index]).intersection(set(cand)):
+          #if it does, get the one with smaller sum of distances
+          if distance<min_dist:
+              min_dist = distance
+              best_cand =cand
 
-    df_sorted.at[index, 'best_cand'] = list(best_cand)
+      df_sorted.at[index,'best_cand'] = list(best_cand)
 
   # Extract unique candidate combinations and their corresponding rows
-  unique_cands = df_sorted['best_cand'].unique()
-  df_cand = df_sorted[df_sorted['best_cand'].isin(unique_cands)]
+  cands = df_sorted.best_cand
+  indices_cand = cands.apply(pd.Series).stack().reset_index(drop=True).unique()
 
   # Identify valid candidate combinations with a frequency of 3 (potential clusters)
-  valid_cands = df_cand['best_cand'].value_counts()[df_cand['best_cand'].value_counts() == 3].index.tolist()
+  df_cand = df_sorted[df_sorted.index.isin(indices_cand)]
+  df_cand.sort_values('best_cand')
+  indices = df_cand['best_cand'].isin(df_cand['best_cand'].value_counts()[df_cand['best_cand'].value_counts()==3].index).index
+  indices = indices.unique()
+  df_cand['best_cand'].value_counts()==3
 
-  # Filter DataFrame based on valid candidate combinations
-  filtered_df = df_cand[df_cand['best_cand'].isin(valid_cands)]
+  # Get the lists where the value counts are equal to 3
+  valid_lists = df_cand['best_cand'].value_counts()[df_cand['best_cand'].value_counts() == 3].index.tolist()
 
-  # Assign unique IDs based on the factorized candidate combinations
+  # Filter the DataFrame based on the valid lists
+  filtered_df = df_cand[df_cand['best_cand'].isin(valid_lists)]
+
   filtered_df['ID'] = pd.factorize(filtered_df['best_cand'].apply(tuple))[0]
-
-  # Sort the final DataFrame by ID
   df_final = filtered_df.sort_values('ID')
-
   return df_final
 
 

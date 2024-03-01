@@ -85,13 +85,13 @@ class Particle_Dataset:
         list: A list of filenames of the particle images.
     """
 
-    self.data_path = os.path.join(self.root, 'Dataset', 'SEM')  # Define data path
-    files = os.listdir(self.data_path)  # Get all files in the path
-
+    # Define data path
+    files = os.listdir(self.root)  # Get all files in the path
+    # print(files)
     # Filter files based on extension and particle type code
     filtered_files = sorted([r for r in files if r.split('.')[-1] == 'tif'])
-    filtered_imgs = sorted([r for r in filtered_files if r.split('_')[1] == str(self.img_idx)])
-
+    
+    filtered_imgs = sorted([r for r in filtered_files if r.split('_')[0].split(' ')[1] == str(self.img_idx)])
     return filtered_imgs
 
   def get_idx_crop(self, image, sample):
@@ -111,7 +111,7 @@ class Particle_Dataset:
     # Find and analyze white pixels (background)
     i, j, k = np.where(cropped_img < 2)
     unique_white, counts_white = np.unique(i, return_counts=True)
-
+    # print(sample.split('_')[1],sample.split('_'))
     # Determine the index based on particle type
     if sample.split('_')[1] != '59':
       return unique_white[0]  # Return the first white pixel index for non-spherical particles
@@ -131,7 +131,7 @@ class Particle_Dataset:
 
     particle_idx = self.files[index]
     particle_name = str(particle_idx).split("/")[-1]
-    filename = os.path.join(self.data_path, particle_name)
+    filename = os.path.join(self.root, particle_name)
 
     image = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
     cropped_img = image[2:-2, 2:-2, :]
