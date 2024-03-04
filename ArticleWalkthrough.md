@@ -19,6 +19,7 @@ Since particle morphology plays a decisive role in the behavior of colloidal sys
 This paper utilizes **Scanning Electron Microscope - [SEM Images](https://cloud.uni-konstanz.de/index.php/s/ajGGXeKxm4PYkjg?path=%2FDataset)** - provided by the Colloid Chemistry, Department of Chemistry, University of Konstanz. Also available in this [repository](Dataset). 
 
 ![Alt Text](/images_plots/SEM_example.png)
+
 *Example of SEM Image* 
 
 Regardless of how the images are obtained, there is a usual need to measure at least 500 particles to obtain statistically relevant results. This process is very time-consuming and prone to human bias and systemic errors if conducted manually, which promotes the development of reliable automated measuring techniques.
@@ -44,6 +45,7 @@ The segment anything model (SAM) is a powerful method trained over a vast and di
 
 
 ![Alt Text](/images_plots/demonstrations/SAMDemo.gif)
+
 *Demonstration of SAM segmenting landscape. Source: https://segment-anything.com/*
 
 ### This model can be easily used in Colab (demonstrated in the demo) or locally (below).
@@ -93,6 +95,7 @@ comined_mask, simple_mask, dataframe_SAM = SAM_analysis(img,mask_generator)
 ```
 
 ![Alt Text](images_plots/demonstrations/mask_124_00.png)
+
 *Example of masks after filtering.*
 
 ## Fourth step: Assigning elements to particles and characterizing them
@@ -122,6 +125,7 @@ triplet_all.to_excel(f'{save_path}/df_analized_{saving_name}.xlsx')
 plot_lobes(triplet_all,comb_mask,img,save=True,name=saving_name)
 ```
 ![Alt Text](/SAM-BasedMethod/results/trimers/result_example_124_00.png)
+
 *Example of final masks after filtering and assigning the lobes and particles to which they belong.*
 
 
