@@ -6,19 +6,6 @@ from skimage.color import label2rgb
 from particle_seg import *
 
 
-# def plot_compare_centroids(df_pred, label_small,label_middle,label_large,img):
-#     y_plot= [x for x,y in df_pred.centroid]
-#     x_plot = [y for x,y in df_pred.centroid]
-
-#     fig, ax = plt.subplots(figsize=(16, 9))
-
-#     ax.imshow(img)
-#     ax.scatter(label_small.x_adj, label_small.y_adj,c='b',alpha=0.8,s=12)
-#     ax.scatter(label_middle.x_adj, label_middle.y_adj,c='b',alpha=0.8,s=12)
-#     ax.scatter(label_large.x_adj, label_large.y_adj,c='b',alpha=0.8,s=12)
-#     ax.scatter(x_plot, y_plot,c='r', alpha=0.8,s=12)
-#     plt.show()
-
 def plot_compare_centroids(df_pred, label_small, label_middle, label_large, img):
   """
   Plots and compares predicted centroids with labeled centroids on an image.
@@ -58,26 +45,6 @@ def plot_compare_centroids(df_pred, label_small, label_middle, label_large, img)
   # Display the plot
   plt.show()
 
-# def plot_lobes(df_lobes,comb_mask=None,img=None,save=False,save_path=None,name=None):
-#     fig, ax = plt.subplots(figsize=(16, 12))
-#     if comb_mask.any() != None:
-#         image_label_felzen = label2rgb(comb_mask, image=img)
-#         plt.imshow(image_label_felzen) #tentar ajustar alpha pra ver a img por baixo
-#     else:
-#         plt.imshow(img)
-
-#     for idx in df_lobes['ID'].unique():
-#         _ = df_lobes['ID'] == idx
-#         df_aux = df_lobes[_]
-#         yy = [x for x, y in df_aux[df_aux['ID'] == idx].centroid]
-#         xx = [y for x, y in df_aux[df_aux['ID'] == idx].centroid]
-#         plt.scatter(xx, yy, alpha=0.85)
-#         for i in df_aux['lobe']:
-#             yyy = [x for x, y in df_aux[df_aux['lobe'] == i].centroid]
-#             xxx = [y for x, y in df_aux[df_aux['lobe'] == i].centroid]
-#             plt.text(xxx[0], yyy[0], str(i), color='blue', fontsize=12)
-    
-#     return fig
 
 def plot_lobes(df_lobes, comb_mask=None, img=None, save=False, save_path=None, name=None):
   """
@@ -124,24 +91,6 @@ def plot_lobes(df_lobes, comb_mask=None, img=None, save=False, save_path=None, n
   return fig
 
 
-# def plot_dumbbells(dataframe, img, comb_mask=None,save=False,name=None,save_path=None):
-#     fig, ax = plt.subplots(figsize=(16, 12))
-#     if comb_mask.any() != None:
-#         image_label_felzen = label2rgb(comb_mask, image=img)
-#         plt.imshow(image_label_felzen) #tentar ajustar alpha pra ver a img por baixo
-#     else:
-#         plt.imshow(img)
-
-#     for idx in dataframe['ID'].unique():
-#         yy = [x for x, y in dataframe[dataframe['ID'] == idx].centroid]
-#         xx = [y for x, y in dataframe[dataframe['ID'] == idx].centroid]
-#         plt.scatter(xx, yy, alpha=0.85)
-#         for x, y in zip(xx, yy):
-#             plt.text(x, y, str(int(idx)), color='red', fontsize=12)  # Add text label for each point
-#     if save:
-#         plt.savefig(f'{save_path}/dumbbells_{name}.png')
-#     plt.show()
-
 
 def plot_dumbbells(dataframe, img, comb_mask=None, save=False, name=None, save_path=None):
   """
@@ -184,20 +133,6 @@ def plot_dumbbells(dataframe, img, comb_mask=None, save=False, name=None, save_p
   plt.show()
 
 
-# def plot_tripods_numbered(img, dataframe):
-#     fig, ax = plt.subplots(figsize=(16, 12))
-#     plt.imshow(img)
-
-#     for idx in dataframe['ID'].unique():
-#         yy = [x for x, y in dataframe[dataframe['ID'] == idx].centroid]
-#         xx = [y for x, y in dataframe[dataframe['ID'] == idx].centroid]
-#         plt.scatter(xx, yy, alpha=0.85)
-#         for x, y in zip(xx, yy):
-#             plt.text(x, y, str(idx), color='red', fontsize=12)  # Add text label for each point
-
-#     plt.show()
-  
-
 def plot_tripods_numbered(img, dataframe):
   """
   Plots tripods identified in a DataFrame on an image with text labels for each centroid.
@@ -226,27 +161,6 @@ def plot_tripods_numbered(img, dataframe):
 
   plt.show()
 
-
-# def plot_rect(img, dataframe, segmentation_segments=None,mask_available=False,bbox_col='bbox' ):
-    
-#     y= [x for x,y in dataframe.centroid]
-#     x = [y for x,y in dataframe.centroid]
-
-#     fig, ax = plt.subplots(figsize=(25, 18))
-    
-#     if mask_available:
-#         image_label_overlay = label2rgb(segmentation_segments, image=img, bg_label=0)
-#         ax.imshow(image_label_overlay)
-#     else:
-#         ax.imshow(img)
-        
-#     plt.scatter(x,y,s=12,c='r')
-
-#     for idx in range(dataframe.shape[0]):
-#         minr, minc, maxr, maxc = dataframe.loc[idx,bbox_col]
-#         rect = mpatches.Rectangle((minc, minr), maxc - minc, maxr - minr,
-#                                   fill=False, edgecolor='red', linewidth=0.5)
-#         ax.add_patch(rect)
 
 def plot_rect(img, dataframe, segmentation_segments=None, mask_available=False, bbox_col='bbox'):
   """
@@ -295,44 +209,6 @@ def plot_rect(img, dataframe, segmentation_segments=None, mask_available=False, 
 
 
 
-
-
-# def plot(image1, image2):
-#     # Plot the images
-#     fig, axes = plt.subplots(1, 2, figsize=(16, 9))
-#     # Original image
-#     axes[0].imshow(image1, cmap='gray')
-#     axes[0].set_title('Original Image')
-#     # Result
-#     axes[1].imshow(image2, cmap='gray')
-#     axes[1].set_title('Result')
-#     # Adjust spacing between subplots
-#     plt.tight_layout()
-#     # Display the plot
-#     plt.show()
-
-
-# def plot_seg_mask(img,segmentation_segments,save=False,name=None,alpha=0.3):
-#     fig, ax = plt.subplots(figsize=(16, 10))
-#     image_label_overlay = label2rgb(segmentation_segments, image=img,alpha=0.9)
-#     ax.imshow(img)
-#     ax.imshow(image_label_overlay,alpha=alpha)
-
-# def plot_single_mask(imagem,mask):
-#     plt.figure(figsize=(16,10))
-#     plt.imshow(imagem)
-#     plt.imshow(mask,alpha=0.7,cmap='plasma')
-#     plt.axis()
-
-    
-# def plot_overlay_mask(imagem,mask):
-#     fig, ax = plt.subplots(figsize=(18, 16))
-#     ax.imshow(imagem)
-#     image_label_overlay = label2rgb(mask, image=imagem,alpha=0.9)
-#     ax.imshow(image_label_overlay,alpha=0.5)
-#     ax.imshow(mask,alpha=0.5,cmap='viridis')
-#     plt.axis()
-  
 def plot(image1, image2):
   """
   Plots two images side-by-side for comparison.

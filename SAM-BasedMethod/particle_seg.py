@@ -6,40 +6,6 @@ from skimage.measure import label, regionprops,find_contours
 from scipy.spatial.distance import cdist
 
 
-# def SAM_analysis(img,mask_generator,size_border=40):
-
-#     masks = mask_generator.generate(img)
-#     df = pd.DataFrame(masks)
-    
-#     df['perimeter'] = df['segmentation'].apply(compute_perimeter)
-#     df['circularity'] = circularity(df['area'] , df['perimeter'])
-#     df['point_coords_tuple'] = df['point_coords'].apply(lambda x: tuple(x[0]))
-    
-
-#     filtered_df= df[df['circularity'] > 0.35]
-    
-#     q5, q95 = filtered_df.area.quantile([0.05,0.95])
-#     filtered_df = filtered_df[filtered_df['area'] <  q95]
-#     filtered_df = filtered_df[filtered_df['area'] > q5]
-    
-#     filtered_df.sort_values(by='circularity',ascending=False,inplace=True)
-#     filtered_df.reset_index(inplace=True, drop=True)
-#     filtered_df = remove_border_particles(filtered_df,size=size_border)
-#     filtered_df.reset_index(inplace=True, drop=True)
-    
-#     for idx in range(len(filtered_df)-1):
-#         # Combine arrays
-#         if idx == 0:
-#             filtered_combined_array = filtered_df.loc[idx,'segmentation'] + filtered_df.loc[idx+1,'segmentation']
-#         else: 
-#             filtered_combined_array = filtered_combined_array + filtered_df.loc[idx+1,'segmentation']
-    
-#     comb_mask = np.zeros(filtered_df.segmentation[0].shape)
-#     for idx in range(len(filtered_df.segmentation)):
-#         comb_mask =comb_mask+ np.where(filtered_df.loc[idx,'segmentation'] ==True, idx, 0)
-    
-#     return comb_mask, filtered_combined_array, filtered_df
-
 def SAM_analysis(img, mask_generator, size_border=40):
   """
   Analyzes an image using a mask generator and performs filtering based on area, circularity, and border proximity.
@@ -95,23 +61,6 @@ def SAM_analysis(img, mask_generator, size_border=40):
   return comb_mask, filtered_combined_array, filtered_df
 
 
-
-# def remove_border_particles(df_test,size=40):
-#     for row in range(df_test.shape[0]):
-#         if df_test.loc[row,'segmentation'][:size].any():
-#             df_test.drop([row], inplace=True)
-#             continue
-#         elif df_test.loc[row,'segmentation'][-size:].any():
-#             df_test.drop([row], inplace=True)
-#             continue
-#         elif df_test.loc[row,'segmentation'][:,:size].any():
-#             df_test.drop([row], inplace=True)
-#             continue
-#         elif df_test.loc[row,'segmentation'][:,-size:].any():
-#             df_test.drop([row], inplace=True)
-#             continue
-#     return df_test
-
 def remove_border_particles(df_test, size=40):
   """
   Removes particles from a DataFrame that touch the image border within a specified distance.
@@ -138,12 +87,6 @@ def remove_border_particles(df_test, size=40):
 
   return df_test
     
-# def compute_perimeter(segmentation_mask):
-#     mask_array = np.array(segmentation_mask)
-#     contour = find_contours(mask_array, 0.5, fully_connected='high')
-#     perimeter = np.sum([c.shape[0] for c in contour])
-#     return perimeter
-
 
 def compute_perimeter(segmentation_mask):
   """
@@ -183,37 +126,6 @@ def circularity(area, perimeter):
 
   return (4 * np.pi * area) / (perimeter ** 2)
 
-
-
-
-# def label_props_SAM(img,segmentation_segments):
-#     properties = ['area','convex_area', 'mean_intensity', 'label' , 'perimeter', 'centroid', 'axis_major_length', 'feret_diameter_max','orientation','solidity','eccentricity','bbox']
-
-#     dados_sam = pd.DataFrame(columns=properties)
-
-#     labeled_sam = label(segmentation_segments)
-#     regions_sam = regionprops(labeled_sam, intensity_image=img)
-
-#     for region in regions_sam:
-#         measurements = [getattr(region, prop) for prop in properties]
-#         dados_sam.loc[len(dados_sam)] = measurements
-
-#     dados_sam['circularity'] = circularity(dados_sam['area'] , dados_sam['perimeter'])
-
-
-#     filtered_df = dados_sam[dados_sam['area'] <  10000]
-#     filtered_df = filtered_df[filtered_df['area'] > 300]
-    
-
-#     q5, q95 = filtered_df.area.quantile([0.05,0.95])
-#     filtered_df = dados_sam[dados_sam['area'] <  q95]
-#     filtered_df = filtered_df[filtered_df['area'] > q5]
-    
-#     filtered_df= filtered_df[filtered_df['circularity'] > 0.35]
-    
-#     filtered_df.sort_values(by='circularity',ascending=False,inplace=True)
-#     filtered_df.reset_index(inplace=True, drop=True)
-#     return filtered_df
 
 def label_props_SAM(img, segmentation_segments):
   """
@@ -264,17 +176,6 @@ def label_props_SAM(img, segmentation_segments):
   return filtered_df
 
 
-
-# def get_cob_mask_from_sam(dataframe_SAM):
-#     df_over = dataframe_SAM.copy()
-#     df_over.sort_values(by='predicted_iou',inplace=True) #coords y,x
-#     df_over.reset_index(inplace=True) #coords y,x
-#     comb_mask = np.zeros(df_over.segmentation[0].shape)
-#     for idx in range(len(df_over.segmentation)):
-#         comb_mask =comb_mask+ np.where(df_over.loc[idx,'segmentation'] ==True, idx, 0)
-
-#     return comb_mask
-
 def get_cob_mask_from_sam(dataframe_SAM):
   """
   Creates a combined mask from a DataFrame containing segmentation information.
@@ -306,78 +207,6 @@ def get_cob_mask_from_sam(dataframe_SAM):
 
   return comb_mask
 
-
-
-# def define_id_particle_from_regionprops(sam_df):
-
-#     df_dist = sam_df.copy()
-#     df_dist.sort_values(by='centroid',inplace=True) #coords x,y eu acho
-#     df_dist.reset_index(inplace=True)#,drop=True) #coords y,x
-
-#     #pega as coordenadas
-#     coords = df_dist.loc[:,'centroid']
-#     #gera matriz de distancias para pegar provaveis candidatos
-#     distance_matrix =cdist(coords.tolist(), coords.tolist())
-#     idx = distance_matrix.argsort(axis=1)
-
-#     df_dist['candidate'] =''
-#     for row in range(df_dist.shape[0]):
-#         df_dist.loc[row,'candidate'] = tuple( ([idx[row,0]],[idx[row,1]],[idx[row,2]]) )
-
-#     df_dist['sum_dist'] =''
-#     for row in range(df_dist.shape[0]):
-#         i,j,k = df_dist.loc[row,'candidate']
-#         df_dist.loc[row,'sum_dist'] =np.sum( [distance_matrix[row,i],distance_matrix[row,j],distance_matrix[row,k] ])
-
-
-#     # Sort the DataFrame by 'sum_dist' in ascending order
-#     df_sorted = df_dist.sort_values('sum_dist')
-
-#     df_sorted['best_cand'] = ''
-#     for index, row in df_sorted.iterrows():
-#         #analisa cada candidato
-#         candidate = tuple(row['candidate'])
-#         sum_dist = row['sum_dist']
-#         #assume que ele eh o de menor distancia inicialmente
-#         min_dist = sum_dist
-#         best_cand = candidate
-
-#         for i_2 in range(df_sorted.shape[0]):
-#             #olha os demais
-#             cand = df_sorted.loc[i_2,'candidate']
-#             distance = df_sorted.loc[i_2,'sum_dist']
-#             #verifica se ele faz intersecao com outros
-#             if set([index]).intersection(set(cand)):
-#                 #se tem intersecao, compara quem tem a menor soma de distancia
-#                 if distance<min_dist:
-#                     min_dist = distance
-#                     best_cand =cand
-#         #depois de olhar todas as possibilidades, assinala o melhor candidato
-#         #esse codigo ta bem pouco otumizado, mas vai ficar assim por enquanto
-#         df_sorted.at[index,'best_cand'] = list(best_cand)
-
-#     cands = df_sorted.best_cand
-#     indices_cand = cands.apply(pd.Series).stack().reset_index(drop=True).unique()
-
-
-#     df_cand = df_sorted[df_sorted.index.isin(indices_cand)]
-#     df_cand.sort_values('best_cand')
-
-#     indices = df_cand['best_cand'].isin(df_cand['best_cand'].value_counts()[df_cand['best_cand'].value_counts()==3].index).index
-#     indices = indices.unique()
-#     df_cand['best_cand'].value_counts()==3
-
-#     # Assuming you have pandas imported and your DataFrame is named df_cand
-
-#     # Get the lists where the value counts are equal to 3
-#     valid_lists = df_cand['best_cand'].value_counts()[df_cand['best_cand'].value_counts() == 3].index.tolist()
-
-#     # Filter the DataFrame based on the valid lists
-#     filtered_df = df_cand[df_cand['best_cand'].isin(valid_lists)]
-
-#     filtered_df['ID'] = pd.factorize(filtered_df['best_cand'].apply(tuple))[0]
-#     df_final = filtered_df.sort_values('ID')
-#     return df_final
 
 def define_id_particle_from_regionprops(sam_df):
   """
@@ -461,17 +290,6 @@ def define_id_particle_from_regionprops(sam_df):
   return df_final
 
 
-
-# def middle_angle_three_points(pointa, pointb, pointc):
-#     vectorbc = (pointb.centroid[0] - pointc.centroid[0], pointb.centroid[1] - pointc.centroid[1])
-#     vectorba = (pointb.centroid[0] - pointa.centroid[0], pointb.centroid[1] - pointa.centroid[1])
-
-#     dot_product_bc_ba = np.dot(vectorbc, vectorba)
-
-#     magnitude_product_bc_ba = np.linalg.norm(vectorbc) * np.linalg.norm(vectorba)
-#     angle_rad_aBc = math.acos(dot_product_bc_ba / magnitude_product_bc_ba)
-#     return math.degrees(angle_rad_aBc)
-
 def middle_angle_between_points(point_a, point_b, point_c):
   """
   Calculates the middle angle between three points using vector dot product and arctangent.
@@ -498,14 +316,6 @@ def middle_angle_between_points(point_a, point_b, point_c):
   angle_deg = math.degrees(angle_rad)
 
   return angle_deg
-
-# def get_max_angle(point1, point2, point3):
-#     tri_123 = middle_angle_three_points(point1, point2, point3)
-#     tri_231 = middle_angle_three_points(point2, point3, point1)
-#     tri_312 = middle_angle_three_points(point3, point1, point2)
-#     middle_angles = [tri_312, tri_123, tri_231]
-#     np.testing.assert_almost_equal(np.sum(middle_angles), 180, 5)
-#     return np.max(middle_angles), np.argmax(middle_angles) 
 
 
 def get_max_angle(point1, point2, point3):
@@ -605,27 +415,6 @@ def set_lobe(df_particle, point1, point2, point3, middle_point, max_angle):
     return df_particle
 
 
-# def assign_lobes(dataframe):
-#     # Create an empty DataFrame with the same columns as merged_triplet
-#     dataframe['max_angle'] = ''
-#     triplet_all = pd.DataFrame(columns=dataframe.columns)
-
-#     # Iterate over each unique index in merged_triplet
-#     for idx in dataframe['ID'].unique():
-#         particles = dataframe[dataframe['ID'] == idx]
-
-#         # Get the coordinates of the three points
-#         point1 = particles.iloc[0, :]
-#         point2 = particles.iloc[1, :]
-#         point3 = particles.iloc[2, :]
-
-#         max_angle, middle_point = get_max_angle(point1, point2, point3)
-
-
-#         triplet_particle_df = set_lobe(particles, point1, point2, point3, middle_point,max_angle) #max_angle mod
-#         triplet_all = pd.concat([triplet_all, triplet_particle_df])
-
-#     return triplet_all
 def assign_lobes(dataframe):
   """
   Assigns lobe labels and maximum angles to a DataFrame based on unique particle IDs.
@@ -668,19 +457,6 @@ def assign_lobes(dataframe):
 
 
 
-
-# def define_particle_lobes_from_regionprops(sam_df): 
-#     df_dist_init = define_candidates(sam_df)
-#     df_new = define_dumbbell_pairs(df_dist_init)
-
-#     df_new = get_paired_distance(df_new)
-
-#     df_new['radius'] = df_new['axis_major_length'] / 2
-
-#     df_paired = assign_lobes_dumbbells(df_new)
-
-#     return df_paired
-
 def define_particle_lobes_from_regionprops(sam_df):
   """
   Defines particle lobes from a DataFrame containing region properties.
@@ -711,24 +487,6 @@ def define_particle_lobes_from_regionprops(sam_df):
   return df_paired
 
 
-
-# def define_candidates(dataframe):
-#     df_dist_init = dataframe.copy()
-#     df_dist_init.sort_values(by='centroid',inplace=True) #coords x,y eu acho
-#     df_dist_init.reset_index(inplace=True,drop=True) #coords y,x
-    
-#     #pega as coordenadas
-#     coords = df_dist_init.loc[:,'centroid']
-#     #gera matriz de distancias para pegar provaveis candidatos
-#     distance_matrix =cdist(coords.tolist(), coords.tolist())
-#     idx = distance_matrix.argsort(axis=1)
-    
-#     #define candidatos a par dumbbell
-#     df_dist_init['candidate'] =''
-#     for row in range(df_dist_init.shape[0]):
-#         df_dist_init.loc[row,'candidate'] = tuple( ([idx[row,1]],[idx[row,2]],[idx[row,3]]) )
-    
-#     return df_dist_init
 
 def define_candidates(dataframe):
   """
@@ -773,31 +531,6 @@ def define_candidates(dataframe):
   return df_dist_init
 
 
-
-
-# def set_n_closest_neighbor(dataframe, lista_indices, referencia,n):
-#     df_treino = dataframe.copy()
-#     lista_indices2 = lista_indices.copy()
-#     ref2 = referencia
-#     #Agora vai iterar de novo sobre as que sobraram
-#     for row in lista_indices2:
-#         if row in lista_indices2:
-
-#             viz = df_treino.loc[row,'candidate']
-#             o_n_mais_perto = viz[n]
-
-#             if row  == df_treino.loc[o_n_mais_perto,'candidate'][0]:
-#                 #verificar se a distancia menor que a soma dos raios
-#                 df_treino.at[row,'par'] =[row, o_n_mais_perto]
-#                 df_treino.at[o_n_mais_perto,'par'] = [row, o_n_mais_perto]
-#                 df_treino.at[row,'ID'] = int(ref2)
-#                 df_treino.at[o_n_mais_perto,'ID'] = int(ref2)
-                
-                
-#                 lista_indices2.remove(row)
-#                 lista_indices2.remove(o_n_mais_perto)
-#                 ref2+=1
-#     return df_treino,lista_indices2,ref2
 
 def set_n_closest_neighbor(dataframe, lista_indices, referencia, n):
   """
@@ -850,19 +583,6 @@ def set_n_closest_neighbor(dataframe, lista_indices, referencia, n):
   return df, list_idx, ref2
 
 
-
-# def define_dumbbell_pairs(dataframe):
-#     df_init = dataframe.copy()
-#     lista_idx = list(df_init.index)
-#     ref=0
-#     df_init['par'] = ''
-
-#     df1 ,lista_idx,ref = set_n_closest_neighbor(df_init, lista_idx, ref,n=0)
-#     df2,lista_idx,ref = set_n_closest_neighbor(df1, lista_idx, ref,n=1)
-#     df_new,lista_idx,ref = set_n_closest_neighbor(df2, lista_idx, ref,n=2)
-    
-#     return df_new
-
 def define_dumbbell_pairs(dataframe):
   """
   Identifies dumbbell-shaped particle pairs from a DataFrame with potential pairs.
@@ -901,24 +621,6 @@ def define_dumbbell_pairs(dataframe):
 
   return df_new
 
-
-
-# def get_paired_distance(dataframe):
-#     df_new = dataframe.copy()
-#     df_new['distance']=''
-#     for row in df_new.index:
-#         if df_new.loc[row,'par'] != '':
-#             d1,d2 = df_new.loc[row,'par']
-
-#             coords = df_new.loc[[d1,d2],'centroid']
-
-#             distance_matrix =cdist(coords.tolist(), coords.tolist())
-
-#             assert distance_matrix[0][1] == distance_matrix[1][0], 'distancia nao bate'
-
-#             df_new.at[row,'distance'] = distance_matrix[0][1]
-            
-#     return df_new
 
 def get_paired_distance(dataframe):
   """
@@ -963,28 +665,6 @@ def get_paired_distance(dataframe):
 
   return df_new
 
-
-# def assign_lobes_dumbbells(dataframe):
-    
-#     df_paired = dataframe[dataframe.par != '']
-#     df_paired.loc[:,'lobe'] = ''
-#     for indice in df_paired.ID.unique():
-#         df_particle = df_paired[df_paired.ID == indice]
-
-#         l1,l2 = df_particle.index[0] ,df_particle.index[1]
-
-#         test_a = df_particle.loc[l1,'distance'] < (df_particle.loc[l1,'radius'] + df_particle.loc[l2,'radius']) 
-#         test_b = df_particle.loc[l2,'distance'] < (df_particle.loc[l1,'radius'] + df_particle.loc[l2,'radius']) 
-#         if test_a and test_b:
-
-#             if df_particle.loc[l1, 'area'] > df_particle.loc[l2, 'area']:
-#                 df_paired.at[l1, 'lobe'] = 'maior'
-#                 df_paired.at[l2, 'lobe'] = 'menor'
-#             elif df_particle.loc[l1, 'area'] <= df_particle.loc[l2, 'area']:
-#                 df_paired.at[l1, 'lobe'] = 'menor'
-#                 df_paired.at[l2, 'lobe'] = 'maior'
-#     df_paired = df_paired[df_paired.lobe != '']
-#     return df_paired
 def assign_lobes_dumbbells(dataframe):
   """
   Assigns lobe labels ("maior" and "menor") to particles in identified dumbbell pairs.

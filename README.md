@@ -4,7 +4,7 @@ We are expanding the results of the Segment Anything Model (Meta, 2023) to ident
 
 We present an analysis routine based on a pre-trained deep learning model for image segmentation that allows us to determine the dimensions and morphology of structures with different levels of complexity depicted in micrographs.
 
-Codes of the [paper](insert_papaer_url): "Automated Morphology Analysis of Nanoparticles Using the Segment Anything Pre-Trained Artificial Intelligence Model" submitted to Scientific Reports (2024). 
+Codes of the [paper](insert_papaer_url): "Automated Morphology Analysis of Nanoparticles Using the Segment Anything Model" submitted to Scientific Reports (2024). 
 
 Authored by:
 * Gabriel A. A. Monteiro - Colloid Chemistry, Department of Chemistry, University of Konstanz, Germany
@@ -12,7 +12,7 @@ Authored by:
 * Jefersson A. dos Santos - Department of Computer Science, University of Sheffield, United Kingdom
 * Alexander Wittemann - Colloid Chemistry, Department of Chemistry, University of Konstanz, Germany
 
-## Key Ideia
+## Key Ideas
 
 Using a pre-trained neural network, the Segment Anything Model, this method shows automated segmentation between particles' subdivisions. 
 
@@ -44,4 +44,4 @@ Scanning electron microscope [(SEM) Images](https://cloud.uni-konstanz.de/index.
 
 Example of result for a trimer particle showing the masks obtained from the SAM with our post-processing techniques to focus on the relevant masks. Also, our technique allows us to determine which element belongs to which particle, enhancing the provided model output.   
 
-<img src="SAM-BasedMethod\results\trimers\result_example_124_03.png" width="440" height="310">
+<img src="SAM-BasedMethod\results\trimers\result_example_124_00.png" width="440" height="310">
