@@ -1,6 +1,6 @@
 # Particle Segmentation and Morphology Analysis using the SAM: a walkthrough
 
-Here, we provide an easy-to-follow implementation of our method. A Demo notebook for each particle type is also available in this repository or directly in [Colab](https://drive.google.com/file/d/1EA-tuy8JxlPsfaHJCIxxFr-0hhbGmvRD/view?usp=sharing).
+Here, we provide an easy-to-follow implementation of our method. A Demo notebook for each particle type is also available in this repository or directly in [Colab](https://colab.research.google.com/drive/1UFRpB3hEjU9UMzZk-HT1dduNmNRnS8rY?authuser=1#scrollTo=YPmBf82vI-jz).
 
 ## Remembering Key Ideas
 
@@ -16,7 +16,7 @@ The model colloids used to test the method are compared to previously published 
 
 Since particle morphology plays a decisive role in the behavior of colloidal systems, an extensive morphological characterization must be conducted for any given sample. This analysis is commonly done using micrographs, either obtained from optical microscopy, scanning electron microscopy (SEM), transmission electron microscopy (TEM), or atomic force microscopy (AFM). 
 
-This paper utilizes **Scanning Electron Microscope - [SEM Images](https://cloud.uni-konstanz.de/index.php/s/ajGGXeKxm4PYkjg?path=%2FDataset)** - provided by the Colloid Chemistry, Department of Chemistry, University of Konstanz. Also available in this [repository](Dataset). 
+This paper utilizes **Scanning Electron Microscope - [SEM Images]([https://cloud.uni-konstanz.de/index.php/s/ajGGXeKxm4PYkjg?path=%2FDataset](https://kondata.uni-konstanz.de/radar/en/dataset/EsfTYSZxEqPwiVkZ?token=JkMlsbdRVNoyALehTOiy))** - provided by the Colloid Chemistry, Department of Chemistry, University of Konstanz. Also available in this [repository](Dataset). 
 
 ![Alt Text](/images_plots/SEM_example.png)
 
