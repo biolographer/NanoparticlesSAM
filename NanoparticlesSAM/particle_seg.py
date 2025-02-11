@@ -1,8 +1,9 @@
 import math
 import numpy as np
 import pandas as pd
+import cv2
 
-from skimage.measure import label, regionprops,find_contours
+from skimage.measure import label, regionprops, find_contours
 from scipy.spatial.distance import cdist
 
 
@@ -44,9 +45,10 @@ def SAM_analysis(img, mask_generator, size_border=40):
   filtered_df.sort_values(by='circularity', ascending=False, inplace=True)
   filtered_df.reset_index(inplace=True, drop=True)
 
-  # Exclude particles near the border
-  filtered_df = remove_border_particles(filtered_df, size=size_border)
-  filtered_df.reset_index(inplace=True, drop=True)
+  if size_border > 0:
+    # Exclude particles near the border
+    filtered_df = remove_border_particles(filtered_df, size=size_border)
+    filtered_df.reset_index(inplace=True, drop=True)
 
   # Combine segmentation arrays for remaining particles
   filtered_combined_array = filtered_df.loc[0, 'segmentation']
@@ -58,34 +60,118 @@ def SAM_analysis(img, mask_generator, size_border=40):
   for idx in range(len(filtered_df.segmentation)):
     comb_mask += np.where(filtered_df.loc[idx, 'segmentation'] == True, idx + 1, 0)
 
-  return comb_mask, filtered_combined_array, filtered_df
+  return comb_mask, filtered_combined_array, filtered_df #comined_mask, simple_mask, dataframe_SAM
+  
 
-
-def remove_border_particles(df_test, size=40):
+def sphere_segmentation(img, mask_generator, 
+                        nanometer_per_pixel=None, 
+                        diameter_cutoff=None,
+                        circularity_cutoff = 0.75,
+                        border_cutoff=True):
   """
-  Removes particles from a DataFrame that touch the image border within a specified distance.
+  Analyzes an image using a mask generator and performs filtering based on area, circularity, and border proximity.
 
   Args:
-      df_test (pandas.DataFrame): A DataFrame containing particle data.
-      size (int, optional): The distance from the border to exclude particles (default: 40).
+      img (np.ndarray): The image to analyze.
+      mask_generator (object): An object that generates masks for the image.
+      nanometer_per_pixel (float): the size of a pixel in nm.
+      diameter_cutoff (float): the particle size cutoff. 
+      border_cutoff (bool): will remove particles that are < than their diameter away from border.
 
   Returns:
-      pandas.DataFrame: The DataFrame with border particles removed.
+      tuple: A tuple containing three elements:
+          - combined_mask (np.ndarray): The combined mask after filtering.
+          - combined_array (np.ndarray): The combined segmentation array after filtering.
+          - filtered_df (pandas.DataFrame): The filtered DataFrame containing particle data.
   """
+  if not nanometer_per_pixel:
+     nanometer_per_pixel = 1
+     print(f'no value for the dimensions of a pixel in nanometer are given.\n Assuming 1 pixel = {nanometer_per_pixel}nm')
+  else:
+     print(f'1 pixel = {nanometer_per_pixel} nm')
 
-  # Iterate through rows in the DataFrame
-  for row in range(df_test.shape[0]):
+  if not diameter_cutoff:
+     diameter_cutoff = 0
+     print(f'expected particle diameter automatically set to {diameter_cutoff} nm')
+  else: 
+     print(f'expected particle diameter = {diameter_cutoff} nm')
+     nanometer_radius_cutoff = diameter_cutoff / 2.0
+     pixel_radius_cutoff = nanometer_radius_cutoff / nanometer_per_pixel
+     pixel_area_cutoff = np.pi*pixel_radius_cutoff**2
+     
 
-    # Check if particle touches the top, bottom, left, or right border within the specified size
-    if (df_test.loc[row, 'segmentation'][:size].any() or
-        df_test.loc[row, 'segmentation'][-size:].any() or
-        df_test.loc[row, 'segmentation'][:, :size].any() or
-        df_test.loc[row, 'segmentation'][:, -size:].any()):
+  # Generate masks using the mask generator
+  masks = mask_generator.generate(img)
 
-      # Drop the row (particle) if it touches the border
-      df_test.drop(row, inplace=True)
+  # Convert masks to a DataFrame
+  df = pd.DataFrame(masks)
 
-  return df_test
+  # Calculate additional features for each particle
+  df['smooth_mask'] = df['segmentation'].apply(smoothened_mask)
+
+  df['perimeter'] = df['smooth_mask'].apply(compute_perimeter)
+  df['smooth_area'] = df['smooth_mask'].apply(lambda x: x.sum())
+  df["circularity"] = df.apply(lambda row: circularity2(row['smooth_mask']), axis=1)
+
+  #df['circularity'] = circularity(df['area'], df['perimeter'])
+  df['estimated_radius'] = df['area'].apply(lambda x: np.sqrt(x / np.pi))
+
+  df['point_coords_tuple'] = df['point_coords'].apply(lambda x: tuple(x[0]))
+
+  # Filter particles based on circularity
+  filtered_df = df[df['circularity'] > circularity_cutoff]
+  q5, q95 = filtered_df.area.quantile([0.05, 0.95])
+
+  # Filter particles based on area using interquartile range (IQR)
+  filtered_df = filtered_df[(filtered_df['area'] < q95) & (filtered_df['area'] > q5)]
+  filtered_df = filtered_df[(filtered_df['area'] > pixel_area_cutoff)]
+
+
+  # Sort and reset index for convenience
+  filtered_df.sort_values(by='circularity', ascending=False, inplace=True)
+  filtered_df.reset_index(inplace=True, drop=True)
+
+  if border_cutoff:
+    img_height, img_width, _ = img.shape
+    # Exclude particles near the border
+    filtered_df = remove_border_particles(filtered_df, img_height, img_width)
+    filtered_df.reset_index(inplace=True, drop=True)
+
+  # Combine segmentation arrays for remaining particles
+  filtered_combined_array = filtered_df.loc[0, 'segmentation']
+  for idx in range(1, len(filtered_df)):
+    filtered_combined_array += filtered_df.loc[idx, 'segmentation']
+
+  # Create a combined mask with unique labels for each remaining particle
+  comb_mask = np.zeros(filtered_df.segmentation[0].shape)
+  for idx in range(len(filtered_df.segmentation)):
+    comb_mask += np.where(filtered_df.loc[idx, 'segmentation'] == True, idx + 1, 0)
+
+  return comb_mask, filtered_combined_array, filtered_df #comined_mask, simple_mask, dataframe_SAM
+
+
+def remove_border_particles(df, height, width):
+    """
+    Removes particles whose center is closer than their radius to the image border.
+
+    Args:
+        df_test (pd.DataFrame): DataFrame containing 'radius' and 'point_coords_tuple' columns.
+        height (int): Height of the image.
+        width (int): Width of the image.
+
+    Returns:
+        pd.DataFrame: Filtered DataFrame with border particles removed.
+    """
+    def is_near_border(row):
+        x, y = row["point_coords_tuple"]
+        r = row["estimated_radius"]
+        return (x - r < 0) or (y - r < 0) or (x + r > width) or (y + r > height)
+
+    # Apply the filter
+    df_filtered = df[~df.apply(is_near_border, axis=1)].copy()
+
+    print(f"Removed {len(df) - len(df_filtered)} particles near the border.")
+    return df_filtered
     
 
 def compute_perimeter(segmentation_mask):
@@ -176,7 +262,7 @@ def label_props_SAM(img, segmentation_segments):
   return filtered_df
 
 
-def get_cob_mask_from_sam(dataframe_SAM):
+def get_comb_mask_from_sam(dataframe_SAM):
   """
   Creates a combined mask from a DataFrame containing segmentation information.
 
@@ -712,3 +798,31 @@ def assign_lobes_dumbbells(dataframe):
   df_paired = df_paired[df_paired['lobe'] != '']
 
   return df_paired
+
+
+def smoothened_mask(mask):
+    """Smooths the binary mask and returns its circularity."""
+
+    # Ensure binary mask
+    mask = (mask > 0).astype(np.uint8)
+
+    # Morphological closing to fill small holes and smooth boundaries
+    kernel = np.ones((3, 3), np.uint8)  # Adjust kernel size as needed
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+
+    # Gaussian blur to smooth rough edges
+    mask = cv2.GaussianBlur(mask.astype(np.float32), (5, 5), 0)
+
+    # Re-threshold to keep it binary
+    _, mask = cv2.threshold(mask, 0.5, 1, cv2.THRESH_BINARY)
+
+    return mask
+
+def circularity2(mask):
+    # Compute circularity after smoothing
+    region = regionprops(mask.astype(int))[0]  # Only one region per mask
+    perimeter = region.perimeter
+    area = region.area
+
+    circularity = (4 * np.pi * area) / (perimeter ** 2) if perimeter > 0 else 0
+    return circularity

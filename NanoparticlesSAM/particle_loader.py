@@ -12,7 +12,7 @@ class Particle_Dataset:
       img_idx (int): The particle type code (e.g., 124 for trimers, 116 for dumbbells, 59 for spheres).
   """
 
-  def __init__(self, root, device=None, crop_banner=False):
+  def __init__(self, root, device=None, crop_banner=False, normalize=True):
     """
     Initializes the Particle_Dataset object.
 
@@ -23,8 +23,9 @@ class Particle_Dataset:
 
     self.root = root
     self.device = device
+    self.normalize = normalize
 
-    if device == 'jeol':
+    if device == 'jeol' or crop_banner == True:
        self.crop_banner = True
        print(f'Setting "crop banner={self.crop_banner}" due to {self.device} device')
     else:
@@ -104,6 +105,8 @@ class Particle_Dataset:
       # Apply cropping based on the particle type and retrieved index
       cropped_img = cropped_img[:self.get_idx_crop(image, particle_name), :, :]
       metadata = None
+      if self.normalize:
+         cropped_img = cv2.normalize(cropped_img, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
     elif self.device == 'jeol':
        cropped_img, metadata = self._parse_jeol_tiff(filename)
 
@@ -132,7 +135,10 @@ class Particle_Dataset:
       metadata = self._parse_jeol_metadata(filename)
 
       if self.crop_banner:
-          col_nr, row_nr = [int(i) for i in metadata['CM_IMAGE_SIZE'].split(' ')]
-          img = img[:row_nr, :col_nr, :]
-
+        col_nr, row_nr = [int(i) for i in metadata['CM_IMAGE_SIZE'].split(' ')]
+        img = img[:row_nr, :col_nr, :]
+      
+      if self.normalize:
+         img = cv2.normalize(img, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
+    
       return (img, metadata)
