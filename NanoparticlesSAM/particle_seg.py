@@ -211,7 +211,7 @@ def sphere_segmentation(img, mask_generator,
   # calculate radius in nm
   filtered_df['nm_feret_radius'] = filtered_df['feret_diameter'].apply(lambda x: x*nanometer_per_pixel/2)
   filtered_df['nm_estimated_radius'] = filtered_df['estimated_radius'].apply(lambda x: x*nanometer_per_pixel)
-  filtered_df['nm_min_feret_diameter'] = filtered_df['nm_min_feret_diameter'].apply(lambda x: x*nanometer_per_pixel)
+  filtered_df['nm_min_feret_diameter'] = filtered_df['min_feret_diameter'].apply(lambda x: x*nanometer_per_pixel)
 
   if max_feret_filter:
     # filter against max feret radius
