@@ -6,6 +6,37 @@ import cv2
 from skimage.measure import label, regionprops, find_contours
 from scipy.spatial.distance import cdist
 
+def feret_diameter(mask):
+    """
+    Computes the Feret diameter (maximum caliper diameter) of a given smooth mask.
+
+    Args:
+        mask (np.ndarray): Binary mask of the particle.
+
+    Returns:
+        float: The Feret diameter (longest distance between any two points on the contour).
+    """
+    # Ensure binary mask
+    mask = (mask > 0).astype(np.uint8)
+
+    # Find contours
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not contours:
+        return np.nan  # No valid contours found
+
+    # Get the convex hull of the largest contour
+    largest_contour = max(contours, key=cv2.contourArea)
+    hull = cv2.convexHull(largest_contour)
+
+    # Compute pairwise distances between hull points
+    hull_points = hull[:, 0, :]  # Extract (x, y) coordinates
+    pairwise_distances = cdist(hull_points, hull_points, metric="euclidean")
+
+    # Get the maximum Feret diameter
+    feret_diameter = np.max(pairwise_distances)
+    
+    return feret_diameter
+
 
 def SAM_analysis(img, mask_generator, size_border=40):
   """
@@ -75,7 +106,7 @@ def sphere_segmentation(img, mask_generator,
       img (np.ndarray): The image to analyze.
       mask_generator (object): An object that generates masks for the image.
       nanometer_per_pixel (float): the size of a pixel in nm.
-      diameter_cutoff (float): the particle size cutoff. 
+      diameter_cutoff (float): the particle size cutoff in nanometer. 
       border_cutoff (bool): will remove particles that are < than their diameter away from border.
 
   Returns:
@@ -136,6 +167,15 @@ def sphere_segmentation(img, mask_generator,
     # Exclude particles near the border
     filtered_df = remove_border_particles(filtered_df, img_height, img_width)
     filtered_df.reset_index(inplace=True, drop=True)
+
+  # calculate feret diameter (largest diameter of the mask)
+  filtered_df['feret_diameter'] = filtered_df['smooth_mask'].apply(feret_diameter)
+  
+  # calculate radius in nm
+  filtered_df['nm_feret_radius'] = filtered_df['feret_diameter'].apply(lambda x: x*nanometer_per_pixel/2)
+  filtered_df['nm_estimated_radius'] = filtered_df['estimated_radius'].apply(lambda x: x*nanometer_per_pixel)
+
+
 
   # Combine segmentation arrays for remaining particles
   filtered_combined_array = filtered_df.loc[0, 'segmentation']
