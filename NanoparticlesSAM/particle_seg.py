@@ -6,6 +6,40 @@ import cv2
 from skimage.measure import label, regionprops, find_contours
 from scipy.spatial.distance import cdist
 
+import cv2
+import numpy as np
+
+def min_feret_diameter(mask):
+    """
+    Computes the minimum Feret diameter (smallest caliper diameter) of a given smooth mask.
+
+    Args:
+        mask (np.ndarray): Binary mask of the particle.
+
+    Returns:
+        float: The minimum Feret diameter.
+    """
+    # Ensure binary mask
+    mask = (mask > 0).astype(np.uint8)
+
+    # Find contours
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not contours:
+        return np.nan  # No valid contours found
+
+    # Get the largest contour (assuming it's the main particle)
+    largest_contour = max(contours, key=cv2.contourArea)
+
+    # Compute the minimum enclosing rotated rectangle
+    rect = cv2.minAreaRect(largest_contour)
+    (center_x, center_y), (width, height), angle = rect
+
+    # Minimum Feret diameter is the smaller side of the bounding box
+    min_feret_diameter = min(width, height)
+
+    return min_feret_diameter
+
+
 def feret_diameter(mask):
     """
     Computes the Feret diameter (maximum caliper diameter) of a given smooth mask.
@@ -98,7 +132,9 @@ def sphere_segmentation(img, mask_generator,
                         nanometer_per_pixel=None, 
                         diameter_cutoff=None,
                         circularity_cutoff = 0.75,
-                        border_cutoff=True):
+                        border_cutoff=True,
+                        max_feret_filter=True,
+                        min_feret_filter=True):
   """
   Analyzes an image using a mask generator and performs filtering based on area, circularity, and border proximity.
 
@@ -170,12 +206,22 @@ def sphere_segmentation(img, mask_generator,
 
   # calculate feret diameter (largest diameter of the mask)
   filtered_df['feret_diameter'] = filtered_df['smooth_mask'].apply(feret_diameter)
-  
+  filtered_df['min_feret_diameter'] = filtered_df['smooth_mask'].apply(min_feret_diameter)
+
   # calculate radius in nm
   filtered_df['nm_feret_radius'] = filtered_df['feret_diameter'].apply(lambda x: x*nanometer_per_pixel/2)
   filtered_df['nm_estimated_radius'] = filtered_df['estimated_radius'].apply(lambda x: x*nanometer_per_pixel)
+  filtered_df['nm_min_feret_diameter'] = filtered_df['nm_min_feret_diameter'].apply(lambda x: x*nanometer_per_pixel)
 
+  if max_feret_filter:
+    # filter against max feret radius
+    q5, q95 = filtered_df.nm_feret_radius.quantile([0.05, 0.95])
+    filtered_df = filtered_df[(filtered_df['nm_feret_radius'] < q95) & (filtered_df['nm_feret_radius'] > q5)]
 
+  if min_feret_filter:
+    # filter against min feret diameter
+    q5, q95 = filtered_df.nm_min_feret_diameter.quantile([0.05, 0.95])
+    filtered_df = filtered_df[(filtered_df['nm_min_feret_diameter'] < q95) & (filtered_df['nm_min_feret_diameter'] > q5)]
 
   # Combine segmentation arrays for remaining particles
   filtered_combined_array = filtered_df.loc[0, 'segmentation']
@@ -187,7 +233,7 @@ def sphere_segmentation(img, mask_generator,
   for idx in range(len(filtered_df.segmentation)):
     comb_mask += np.where(filtered_df.loc[idx, 'segmentation'] == True, idx + 1, 0)
 
-  return comb_mask, filtered_combined_array, filtered_df #comined_mask, simple_mask, dataframe_SAM
+  return comb_mask, filtered_combined_array, filtered_df # -> comined_mask, simple_mask, dataframe_SAM
 
 
 def remove_border_particles(df, height, width):
