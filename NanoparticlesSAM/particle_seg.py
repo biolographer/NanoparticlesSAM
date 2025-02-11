@@ -125,7 +125,7 @@ def sphere_segmentation(img, mask_generator,
      diameter_cutoff = 0
      print(f'expected particle diameter automatically set to {diameter_cutoff} nm')
   else: 
-     print(f'expected particle diameter = {diameter_cutoff} nm')
+     print(f'expected particle diameter > {diameter_cutoff} nm')
      nanometer_radius_cutoff = diameter_cutoff / 2.0
      pixel_radius_cutoff = nanometer_radius_cutoff / nanometer_per_pixel
      pixel_area_cutoff = np.pi*pixel_radius_cutoff**2
