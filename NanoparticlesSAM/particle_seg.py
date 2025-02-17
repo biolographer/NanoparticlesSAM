@@ -224,14 +224,19 @@ def sphere_segmentation(img, mask_generator,
     filtered_df = filtered_df[(filtered_df['nm_min_feret_diameter'] < q95) & (filtered_df['nm_min_feret_diameter'] > q5)]
 
   # Combine segmentation arrays for remaining particles
-  filtered_combined_array = filtered_df.loc[0, 'segmentation']
-  for idx in range(1, len(filtered_df)):
-    filtered_combined_array += filtered_df.loc[idx, 'segmentation']
+  #filtered_combined_array = filtered_df.loc[0, 'segmentation']
+  #for idx in range(1, len(filtered_df)):
+  #  filtered_combined_array += filtered_df.loc[idx, 'segmentation']
 
   # Create a combined mask with unique labels for each remaining particle
-  comb_mask = np.zeros(filtered_df.segmentation[0].shape)
-  for idx in range(len(filtered_df.segmentation)):
-    comb_mask += np.where(filtered_df.loc[idx, 'segmentation'] == True, idx + 1, 0)
+  #comb_mask = np.zeros(filtered_df.segmentation[0].shape)
+  #for idx in range(len(filtered_df.segmentation)):
+  #  comb_mask += np.where(filtered_df.loc[idx, 'segmentation'] == True, idx + 1, 0)
+
+  filtered_combined_array = (filtered_df['segmentation'].sum() > 0)*1
+
+  # Create a combined mask with unique labels for each remaining particle
+  comb_mask = (filtered_df['segmentation'] * np.arange(1, len(filtered_df)+1)).sum()
 
   return comb_mask, filtered_combined_array, filtered_df # -> comined_mask, simple_mask, dataframe_SAM
 

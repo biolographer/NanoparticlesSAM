@@ -14,6 +14,8 @@ The original method uses the segment anything model to create segmentation masks
 
 
 ## Original Publications
+
+
 * Gabriel A. A. Monteiro - Colloid Chemistry, Department of Chemistry, University of Konstanz, Germany. [Orcid](https://orcid.org/0000-0002-5049-1704)
 * Bruno A. A. Monteiro - Pattern Recognition and Earth Observation Laboratory, Department of Computer Science, UFMG, Belo Horizonte, Brazil. [Orcid](https://orcid.org/0000-0001-7288-5504)
 * Jefersson A. dos Santos - Department of Computer Science, University of Sheffield, United Kingdom. [Orcid](https://orcid.org/0000-0002-8889-1586)
