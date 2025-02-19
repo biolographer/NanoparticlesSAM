@@ -6,6 +6,40 @@ import scipy.stats as stats
 from itertools import combinations
 import math
 
+
+def remove_outliers_df(df, lower_quantile=0.05, upper_quantile=0.95, min_sample=10):
+    """
+    Removes outliers in each column of a DataFrame based on Q5-Q95 but retains small samples 
+    and keeps original data if no outliers are detected.
+
+    Args:
+        df (pd.DataFrame): Input DataFrame with numerical data.
+        lower_quantile (float): Lower quantile threshold (default: 5th percentile).
+        upper_quantile (float): Upper quantile threshold (default: 95th percentile).
+        min_sample (int): Minimum sample size per column below which no data is removed.
+
+    Returns:
+        pd.DataFrame: Cleaned DataFrame with outliers removed where necessary.
+    """
+    cleaned_df = df.copy()  # Make a copy to avoid modifying the original DataFrame
+
+    for col in df.columns:
+        series = df[col].dropna()  # Work with non-null values only
+
+        if len(series) <= min_sample:  
+            continue  # Skip outlier removal if the sample size is too small
+
+        lower_bound = series.quantile(lower_quantile)
+        upper_bound = series.quantile(upper_quantile)
+
+        is_outlier = (series < lower_bound) | (series > upper_bound)
+
+        if is_outlier.any():  # Only remove outliers if any are detected
+            cleaned_df[col] = df[col].where(~is_outlier, other=pd.NA)  # Keep structure
+
+    return cleaned_df
+
+
 def plot_quantiles(df):
     cols = df.columns
     rows = math.ceil(len(cols) / 2)  
@@ -131,16 +165,17 @@ def difference_of_means_statistic(reference_particles, sample, diameter=False, a
 
 
     result_dict = {'thickness': diff_means, 
-                   'SEM': se,
                    'CI_lower': ce_lower,
                    'CI_upper': ce_upper,
                    'p_value': p_value,
                    'significance': significant,
                    'significance_level': significance_level,
+                   'SEM': se,
                    'DOF': dof,
                    'N_sample': len(sample),
                    'N_ref': len(reference_particles)
                    }
+    
     return result_dict
 
 
