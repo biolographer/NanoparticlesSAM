@@ -130,7 +130,8 @@ def SAM_analysis(img, mask_generator, size_border=40):
 
 def sphere_segmentation(img, mask_generator, 
                         nanometer_per_pixel=None, 
-                        diameter_cutoff=None,
+                        min_diameter_cutoff=None,
+                        max_diameter_cutoff=None,
                         circularity_cutoff = 0.75,
                         border_cutoff=True,
                         max_feret_filter=True,
@@ -142,29 +143,49 @@ def sphere_segmentation(img, mask_generator,
       img (np.ndarray): The image to analyze.
       mask_generator (object): An object that generates masks for the image.
       nanometer_per_pixel (float): the size of a pixel in nm.
-      diameter_cutoff (float): the particle size cutoff in nanometer. 
+      min_diameter_cutoff (float): the particle minimum size cutoff in nanometer. 
+      min_diameter_cutoff (float): the particle maximum size cutoff in nanometer. 
+      circularity_cutoff (float): 0-1, the higher the more stringent.
       border_cutoff (bool): will remove particles that are < than their diameter away from border.
-
+      max_feret_filter (bool): interquartile range filter based on maximum feret diameter.
+      min_feret_filter (bool): interquartile range filter based on minimum feret diameter.
   Returns:
       tuple: A tuple containing three elements:
           - combined_mask (np.ndarray): The combined mask after filtering.
           - combined_array (np.ndarray): The combined segmentation array after filtering.
           - filtered_df (pandas.DataFrame): The filtered DataFrame containing particle data.
   """
+
   if not nanometer_per_pixel:
      nanometer_per_pixel = 1
      print(f'no value for the dimensions of a pixel in nanometer are given.\n Assuming 1 pixel = {nanometer_per_pixel}nm')
   else:
      print(f'1 pixel = {nanometer_per_pixel} nm')
 
-  if not diameter_cutoff:
-     diameter_cutoff = 0
-     print(f'expected particle diameter automatically set to {diameter_cutoff} nm')
+  if not min_diameter_cutoff:
+     min_diameter_cutoff = 0
+     min_nanometer_radius_cutoff = 0
+     min_pixel_radius_cutoff = 0
+     min_pixel_area_cutoff = 0
+     print(f'No minimum diameter provided.\nAutomatically set to {min_diameter_cutoff} nm')
   else: 
-     print(f'expected particle diameter > {diameter_cutoff} nm')
-     nanometer_radius_cutoff = diameter_cutoff / 2.0
-     pixel_radius_cutoff = nanometer_radius_cutoff / nanometer_per_pixel
-     pixel_area_cutoff = np.pi*pixel_radius_cutoff**2
+     min_nanometer_radius_cutoff = min_diameter_cutoff / 2.0
+     min_pixel_radius_cutoff = min_nanometer_radius_cutoff / nanometer_per_pixel
+     min_pixel_area_cutoff = np.pi*min_pixel_radius_cutoff**2
+
+  if not max_diameter_cutoff:
+     max_diameter_cutoff = 1E9
+     max_nanometer_radius_cutoff = 1E9
+     max_pixel_radius_cutoff = 1E9
+     max_pixel_area_cutoff = 1E9
+     print(f'No maximum diameter provided.\nAutomatically set to {min_diameter_cutoff} nm')
+  else: 
+     max_nanometer_radius_cutoff = max_diameter_cutoff / 2.0
+     max_pixel_radius_cutoff = max_nanometer_radius_cutoff / nanometer_per_pixel
+     max_pixel_area_cutoff = np.pi*max_pixel_radius_cutoff**2
+  
+  
+  print(f'Expecting:\t {min_diameter_cutoff:.2f}nm < particle diameter < {max_diameter_cutoff:.2f}nm')
      
 
   # Generate masks using the mask generator
@@ -187,11 +208,12 @@ def sphere_segmentation(img, mask_generator,
 
   # Filter particles based on circularity
   filtered_df = df[df['circularity'] > circularity_cutoff]
-  q5, q95 = filtered_df.area.quantile([0.05, 0.95])
 
-  # Filter particles based on area using interquartile range (IQR)
+  # Filter particles based on area using interquartile range (IQR) and area cutoffs
+  q5, q95 = filtered_df.area.quantile([0.05, 0.95])
   filtered_df = filtered_df[(filtered_df['area'] < q95) & (filtered_df['area'] > q5)]
-  filtered_df = filtered_df[(filtered_df['area'] > pixel_area_cutoff)]
+
+  filtered_df = filtered_df[(filtered_df['area'] > min_pixel_area_cutoff) & (filtered_df['area'] < max_pixel_area_cutoff)]
 
 
   # Sort and reset index for convenience
