@@ -45,7 +45,7 @@ def plot_quantiles(df):
     fig, axs = plt.subplots(rows, 2, figsize=(8 * 2, 8 * rows))  
 
     for col, ax in zip(cols, axs.flat):
-        col_data = df[col].dropna()  # Drop NaN values
+        col_data = df[col].dropna().astype(np.float64)  # Drop NaN values
         unique_vals = col_data.nunique()  # Count unique values
         
         if unique_vals < 2:  # Skip empty or single-value columns
@@ -53,7 +53,7 @@ def plot_quantiles(df):
             continue
         
         standardized_data = stats.zscore(col_data)  # Standardize data
-        
+
         if np.isnan(standardized_data).all():  # If all values are NaN after z-score
             ax.axis('off')
             continue
@@ -196,8 +196,10 @@ def analyze_samples(df, reference_column, diameter=False, alpha=0.1):
             continue  
         
         sample = df[col]
-        result_dict = difference_of_means_statistic(reference_particles.dropna(), sample.dropna(), diameter, alpha)
-        results[col] = result_dict  # Store result dict under the column name
+
+        if len(reference_particles.dropna()) > 0 and len(sample.dropna()) > 0:
+            result_dict = difference_of_means_statistic(reference_particles.dropna(), sample.dropna(), diameter, alpha)
+            results[col] = result_dict  # Store result dict under the column name
 
     # Convert results to DataFrame
     result_df = pd.DataFrame.from_dict(results, orient='index')
