@@ -9,6 +9,44 @@ from scipy.spatial.distance import cdist
 import cv2
 import numpy as np
 
+
+def detect_circle(binary_mask, nm_min_radius=0, nm_max_radius=0, nm_per_pixel=None, convert_to_nm=False):
+    # nanometer -> pixel conversion
+    if nm_per_pixel:
+        # HoughCircles needs integer as input
+        min_radius = int(nm_min_radius / nm_per_pixel )
+        max_radius = int(nm_max_radius / nm_per_pixel )
+    else:
+        min_radius = 0
+        max_radius = 0
+
+    # Ensure binary mask is in uint8 format
+    mask = np.uint8(binary_mask * 255)
+
+    # Apply Gaussian Blur to smooth edges
+    blurred = cv2.GaussianBlur(mask, (9, 9), 2)
+
+    # Detect circles using Hough Circle Transform
+    circles = cv2.HoughCircles(blurred, cv2.HOUGH_GRADIENT, dp=1.2, minDist=30,
+                               param1=50, param2=30, minRadius=min_radius, maxRadius=max_radius)
+
+    # Check if any circle was detected
+    if circles is not None and not convert_to_nm:
+        circles = np.uint16(np.around(circles))
+        x, y, r = circles[0][0]  
+        return (x, y, r)  # Circle center (x, y) and radius r
+    elif circles is not None and convert_to_nm:
+        circles = np.uint16(np.around(circles))
+        x, y, r = circles[0][0]
+        r *= nm_per_pixel
+        return (x, y, r)  # Circle center (x, y) and radius r
+    else:
+        return None  # No circle detected
+    
+def get_hough_radius(binary_mask, nm_min_radius=0, nm_max_radius=0, nm_per_pixel=None, convert_to_nm=False):
+    result = detect_circle(binary_mask, nm_min_radius, nm_max_radius, nm_per_pixel, convert_to_nm)
+    return result[2] if result else pd.NA  # Extract radius if result is not None
+
 def min_feret_diameter(mask):
     """
     Computes the minimum Feret diameter (smallest caliper diameter) of a given smooth mask.
@@ -135,7 +173,8 @@ def sphere_segmentation(img, mask_generator,
                         circularity_cutoff = 0.75,
                         border_cutoff=True,
                         max_feret_filter=True,
-                        min_feret_filter=True):
+                        min_feret_filter=True,
+                        hough_circles=True):
   """
   Analyzes an image using a mask generator and performs filtering based on area, circularity, and border proximity.
 
@@ -244,6 +283,12 @@ def sphere_segmentation(img, mask_generator,
     # filter against min feret diameter
     q5, q95 = filtered_df.nm_min_feret_diameter.quantile([0.05, 0.95])
     filtered_df = filtered_df[(filtered_df['nm_min_feret_diameter'] < q95) & (filtered_df['nm_min_feret_diameter'] > q5)]
+
+  filtered_df['hough_radius'] = filtered_df.apply(lambda x: get_hough_radius(x['smooth_mask'], 
+                                                                             min_diameter_cutoff, 
+                                                                             max_diameter_cutoff, 
+                                                                             nanometer_per_pixel, 
+                                                                             True), axis=1)
 
   # Combine segmentation arrays for remaining particles
   #filtered_combined_array = filtered_df.loc[0, 'segmentation']

@@ -39,23 +39,29 @@ def remove_outliers_df(df, lower_quantile=0.05, upper_quantile=0.95, min_sample=
 
     return cleaned_df
 
-
 def plot_quantiles(df):
     cols = df.columns
     rows = math.ceil(len(cols) / 2)  
     fig, axs = plt.subplots(rows, 2, figsize=(8 * 2, 8 * rows))  
 
     for col, ax in zip(cols, axs.flat):
-        col_data = df[col].dropna()  # Drop NaN values per column
-        if col_data.empty:  # Skip empty columns
+        col_data = df[col].dropna()  # Drop NaN values
+        unique_vals = col_data.nunique()  # Count unique values
+        
+        if unique_vals < 2:  # Skip empty or single-value columns
             ax.axis('off')
             continue
         
-        standardized_data = stats.zscore(col_data)  # Standardize only non-NaN data
+        standardized_data = stats.zscore(col_data)  # Standardize data
+        
+        if np.isnan(standardized_data).all():  # If all values are NaN after z-score
+            ax.axis('off')
+            continue
+
         stats.probplot(standardized_data, dist='norm', plot=ax)  
         ax.set_title(f'Q-Q plot for: {col}')
 
-    # Hide unused subplots (if any)
+    # Hide unused subplots
     for i in range(len(cols), len(axs.flat)):
         axs.flat[i].axis('off')
 
