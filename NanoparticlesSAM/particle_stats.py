@@ -39,7 +39,7 @@ def remove_outliers_df(df, lower_quantile=0.05, upper_quantile=0.95, min_sample=
 
     return cleaned_df
 
-def plot_quantiles(df):
+def plot_quantiles(df, save_path=None):
     cols = df.columns
     rows = math.ceil(len(cols) / 2)  
     fig, axs = plt.subplots(rows, 2, figsize=(8 * 2, 8 * rows))  
@@ -64,6 +64,11 @@ def plot_quantiles(df):
     # Hide unused subplots
     for i in range(len(cols), len(axs.flat)):
         axs.flat[i].axis('off')
+
+    if save_path:
+        plt.savefig(f'{save_path}/qq-plot')
+        plt.tight_layout()
+        plt.show()
 
     plt.tight_layout()
     plt.show()
