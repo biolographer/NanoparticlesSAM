@@ -284,11 +284,12 @@ def sphere_segmentation(img, mask_generator,
     q5, q95 = filtered_df.nm_min_feret_diameter.quantile([0.05, 0.95])
     filtered_df = filtered_df[(filtered_df['nm_min_feret_diameter'] < q95) & (filtered_df['nm_min_feret_diameter'] > q5)]
 
-  filtered_df['hough_radius'] = filtered_df.apply(lambda x: get_hough_radius(x['smooth_mask'], 
-                                                                             min_diameter_cutoff, 
-                                                                             max_diameter_cutoff, 
-                                                                             nanometer_per_pixel, 
-                                                                             True), axis=1)
+  if hough_circles:
+    filtered_df['hough_radius'] = filtered_df.apply(lambda x: get_hough_radius(x['smooth_mask'], 
+                                                                              min_diameter_cutoff, 
+                                                                              max_diameter_cutoff, 
+                                                                              nanometer_per_pixel, 
+                                                                              True), axis=1)
 
   # Combine segmentation arrays for remaining particles
   #filtered_combined_array = filtered_df.loc[0, 'segmentation']
