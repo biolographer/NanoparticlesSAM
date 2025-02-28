@@ -10,7 +10,7 @@ import cv2
 import numpy as np
 
 
-def detect_circle(binary_mask, nm_min_radius=0, nm_max_radius=0, nm_per_pixel=None, convert_to_nm=False):
+def detect_circle(binary_mask, dp=1.2, nm_min_radius=0, nm_max_radius=0, nm_per_pixel=None, convert_to_nm=False):
     # nanometer -> pixel conversion
     if nm_per_pixel:
         # HoughCircles needs integer as input
@@ -27,24 +27,24 @@ def detect_circle(binary_mask, nm_min_radius=0, nm_max_radius=0, nm_per_pixel=No
     blurred = cv2.GaussianBlur(mask, (9, 9), 2)
 
     # Detect circles using Hough Circle Transform
-    circles = cv2.HoughCircles(blurred, cv2.HOUGH_GRADIENT, dp=1.2, minDist=30,
+    circles = cv2.HoughCircles(blurred, cv2.HOUGH_GRADIENT, dp=dp, minDist=30,
                                param1=50, param2=30, minRadius=min_radius, maxRadius=max_radius)
 
     # Check if any circle was detected
     if circles is not None and not convert_to_nm:
-        circles = np.uint16(np.around(circles))
+        circles = np.around(circles, decimals=2)
         x, y, r = circles[0][0]  
         return (x, y, r)  # Circle center (x, y) and radius r
     elif circles is not None and convert_to_nm:
-        circles = np.uint16(np.around(circles))
+        circles = np.around(circles,decimals=2)
         x, y, r = circles[0][0]
         r *= nm_per_pixel
         return (x, y, r)  # Circle center (x, y) and radius r
     else:
         return None  # No circle detected
     
-def get_hough_radius(binary_mask, nm_min_radius=0, nm_max_radius=0, nm_per_pixel=None, convert_to_nm=False):
-    result = detect_circle(binary_mask, nm_min_radius, nm_max_radius, nm_per_pixel, convert_to_nm)
+def get_hough_radius(binary_mask, dp=1.2, nm_min_radius=0, nm_max_radius=0, nm_per_pixel=None, convert_to_nm=False):
+    result = detect_circle(binary_mask, dp, nm_min_radius, nm_max_radius, nm_per_pixel, convert_to_nm)
     return result[2] if result else pd.NA  # Extract radius if result is not None
 
 def min_feret_diameter(mask):
