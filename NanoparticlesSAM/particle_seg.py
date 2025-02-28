@@ -24,7 +24,7 @@ def detect_circle(binary_mask, dp=1.2, nm_min_radius=0, nm_max_radius=0, nm_per_
     mask = np.uint8(binary_mask * 255)
 
     # Apply Gaussian Blur to smooth edges
-    blurred = cv2.GaussianBlur(mask, (9, 9), 2)
+    blurred = cv2.GaussianBlur(mask, (5, 5), 1)
 
     # Detect circles using Hough Circle Transform
     circles = cv2.HoughCircles(blurred, cv2.HOUGH_GRADIENT, dp=dp, minDist=30,
@@ -32,14 +32,14 @@ def detect_circle(binary_mask, dp=1.2, nm_min_radius=0, nm_max_radius=0, nm_per_
 
     # Check if any circle was detected
     if circles is not None and not convert_to_nm:
-        circles = np.around(circles, decimals=2)
+        circles = np.around(circles, decimals=4)
         x, y, r = circles[0][0]  
         return (x, y, r)  # Circle center (x, y) and radius r
     elif circles is not None and convert_to_nm:
-        circles = np.around(circles,decimals=2)
+        circles = np.around(circles,decimals=4)
         x, y, r = circles[0][0]
-        r *= nm_per_pixel
-        return (x, y, r)  # Circle center (x, y) and radius r
+        radius_nm = nm_per_pixel * r
+        return (x, y, radius_nm)  # Circle center (x, y) and radius r
     else:
         return None  # No circle detected
     
