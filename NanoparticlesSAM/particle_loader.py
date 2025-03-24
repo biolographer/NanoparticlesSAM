@@ -117,10 +117,26 @@ class Particle_Dataset:
       with open(filename, '+rb') as f:
           data = f.read()
       textdata = data.decode('utf-16-le', errors='ignore')
-
       metadata_index = textdata.find('$CM_FORMAT')
-      raw_metadata = textdata[metadata_index:].split('$')
+      
+      if metadata_index == -1:
+        print('\nparsing metadata from image failed...')
+        print('trying to parse from text file...')
+        fname = ''.join(filename.split('.')[:-1]+['.txt'])
+        with open(fname,'r') as txt_file:
+          txt = txt_file.readlines()
+          
+        metadata = {}
+        key_value = [i.strip('$\n').split() for i in txt[1:]]
+        for kv in key_value:
+          if len(kv) == 2:
+            metadata[kv[0]] = kv[1]
+          elif len(kv) > 2:
+            metadata[kv[0]] = ' '.join(kv[1:])
+        print 
+        return metadata
 
+      raw_metadata = textdata[metadata_index:].split('$')
       metadata = {}
 
       for entry in raw_metadata:
