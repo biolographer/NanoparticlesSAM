@@ -119,6 +119,7 @@ class Particle_Dataset:
       textdata = data.decode('utf-16-le', errors='ignore')
       metadata_index = textdata.find('$CM_FORMAT')
       
+      # if metadata is not in image
       if metadata_index == -1:
         print('\nparsing metadata from image failed...')
         print('trying to parse from text file...')
