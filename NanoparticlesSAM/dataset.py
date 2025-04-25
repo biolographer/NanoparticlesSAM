@@ -31,7 +31,6 @@ def get_circle_metadata(filename):
     
     # if metadata is not in image
     if metadata_index == -1:
-        print('\nparsing circle masks from image failed...')
         return None
 
     metadata = []
@@ -46,7 +45,13 @@ def get_circle_metadata(filename):
 
 
 class CircleMaskDataset(Dataset):
-    def __init__(self, image_dir, metadata_fn, transform=None, convert_to_tensor=True, crop_banner=True):
+    def __init__(self, image_dir, 
+                 metadata_fn=get_circle_metadata, 
+                 transform=None, 
+                 convert_to_tensor=True, 
+                 crop_banner=True,
+                 error_mode='verbose'):
+        
         all_paths = list(Path(image_dir).glob("*.tif"))
         self.metadata_fn = metadata_fn
         self.transform = transform
@@ -60,6 +65,8 @@ class CircleMaskDataset(Dataset):
         for path in all_paths:
             if metadata_fn(path) is not None:
                 self.image_paths.append(path)
+            elif error_mode == 'verbose':
+                print('\nparsing circle masks from image failed...')
 
     def __len__(self):
         return len(self.image_paths)
@@ -73,6 +80,10 @@ class CircleMaskDataset(Dataset):
     def __getitem__(self, idx):
         img_path = self.image_paths[idx]
         metadata = self.metadata_fn(img_path)
+        
+        
+
+            
 
         image = cv2.imread(str(img_path))  # BGR
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
