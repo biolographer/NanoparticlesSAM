@@ -1,15 +1,18 @@
-from dataset import *
+import os
+import sys
+module_path = os.path.abspath(os.path.join('NanoparticlesSAM/NanoparticlesSAM'))
+sys.path.append(module_path)
+
+from dataset import CircleMaskDataset, get_circle_metadata
 from torch.utils.data import DataLoader
-from segment_anything import sam_model_registry
 import torch.nn.functional as F
 import torch.optim as optim
-from tqdem import tqdm
+from tqdm import tqdm
 
 
 import numpy as np
 import torch
 import cv2
-import os
 from sam2.build_sam import build_sam2
 from sam2.sam2_image_predictor import SAM2ImagePredictor
 
@@ -17,11 +20,11 @@ from sam2.sam2_image_predictor import SAM2ImagePredictor
 IMAGE_FOLDER = '/content/drive/MyDrive/shield_data/training data'
 EPOCHS = 100000
 
-data = dataset.CircleMaskDataset(
+data = CircleMaskDataset(
     image_dir=IMAGE_FOLDER,
-    metadata_fn=dataset.get_circle_metadata,
+    metadata_fn=get_circle_metadata,
     crop_banner=True,
-    convert_to_tensor=True,
+    convert_to_tensor=False,
 )
 
 
@@ -90,12 +93,12 @@ predictor.model.sam_prompt_encoder.train(True) # enable training of prompt encod
 #Note that for this case, you will also need to scan the SAM2 code for “no_grad” commands and remove them (“ no_grad” blocks the gradient collection, which saves memory but prevents training).
 
 optimizer=torch.optim.AdamW(params=predictor.model.parameters(),lr=1e-5,weight_decay=4e-5)
-scaler = torch.cuda.amp.GradScaler(device, ) # mixed precision
+scaler = torch.amp.GradScaler('cuda')
 
 # Training loop
 
 for itr in tqdm(range(EPOCHS)):
-    with torch.cuda.amp.autocast(device,): # cast to mix precision
+    with torch.amp.autocast(device_type='cuda'): # cast to mix precision
             image,mask,input_point, input_label = read_batch(data) # load data batch
             if mask.shape[0]==0: continue # ignore empty batches
             predictor.set_image(image) # apply SAM image encoder to the image
