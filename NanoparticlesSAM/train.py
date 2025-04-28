@@ -198,7 +198,9 @@ for itr in tqdm(range(EPOCHS)):
             scaler.step(optimizer)
             scaler.update() # Mix precision
 
-            if itr%1000==0: torch.save(predictor.model.state_dict(), "model.torch");print("save model")
+            if itr%200==0: 
+              torch.save(predictor.model.state_dict(), f"/content/checkpoints/model_{itr}.torch")
+              print("save model")
 
             # Display results
 
