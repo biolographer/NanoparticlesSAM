@@ -200,7 +200,7 @@ for itr in tqdm(range(EPOCHS)):
 
             if itr%200==0: 
               torch.save(predictor.model.state_dict(), f"/content/checkpoints/model_{itr}.torch")
-              print("save model")
+              print("\n************\nsave model\n************\n")
 
             # Display results
 

@@ -230,6 +230,9 @@ def sphere_segmentation(img, mask_generator,
   # Generate masks using the mask generator
   masks = mask_generator.generate(img)
 
+  if not masks:
+     return None, None, None
+
   # Convert masks to a DataFrame
   df = pd.DataFrame(masks)
 
