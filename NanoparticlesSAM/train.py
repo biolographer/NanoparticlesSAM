@@ -3,6 +3,7 @@ import sys
 module_path = os.path.abspath(os.path.join('NanoparticlesSAM/NanoparticlesSAM'))
 sys.path.append(module_path)
 
+import argparse
 from dataset import CircleMaskDataset, get_circle_metadata
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
@@ -16,10 +17,32 @@ import cv2
 from sam2.build_sam import build_sam2
 from sam2.sam2_image_predictor import SAM2ImagePredictor
 
+def get_args():
+    parser = argparse.ArgumentParser(description="Image folder paths for training and testing.")
+    parser.add_argument('--TRAIN_IMAGE_FOLDER', type=str, required=False,
+                        help='Path to the training image folder')
+    parser.add_argument('--TEST_IMAGE_FOLDER', type=str, required=False,
+                        help='Path to the testing image folder')
+    parser.add_argument('--sam2_checkpoint', type=str, required=False,
+                        help='Path to the SAM2 model checkpoint file')
+    parser.add_argument('--sam2_state_dict', type=str, required=False,
+                        help='Path to the SAM2 state dictionary file')
+    return parser.parse_args()
+
+args = get_args()
+
+if not args:
+    TRAIN_IMAGE_FOLDER = '/content/drive/MyDrive/shield_data/training data'
+    TEST_IMAGE_FOLDER = '/content/drive/MyDrive/shield_data/testing data'
+    sam2_checkpoint = "/content/checkpoints/sam2.1_hiera_tiny.pt"
+else:
+    TRAIN_IMAGE_FOLDER = args.TRAIN_IMAGE_FOLDER
+    TEST_IMAGE_FOLDER = args.TEST_IMAGE_FOLDER
+    sam2_checkpoint = args.sam2_checkpoint
+
+model_cfg = "configs/sam2.1/sam2.1_hiera_t.yaml"
 
 
-TRAIN_IMAGE_FOLDER = '/content/drive/MyDrive/shield_data/training data'
-TEST_IMAGE_FOLDER = '/content/drive/MyDrive/shield_data/testing data'
 EPOCHS = 2000
 
 data = CircleMaskDataset(
@@ -138,8 +161,7 @@ print(f"using device: {device}")
 
 # Load model
 
-sam2_checkpoint = "/content/checkpoints/sam2.1_hiera_tiny.pt"
-model_cfg = "configs/sam2.1/sam2.1_hiera_t.yaml"
+
 sam2_model = build_sam2(model_cfg, sam2_checkpoint,
                   device=device, apply_postprocessing=False)
 predictor = SAM2ImagePredictor(sam2_model)
