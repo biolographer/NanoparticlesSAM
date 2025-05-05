@@ -180,7 +180,7 @@ scaler = torch.amp.GradScaler('cuda')
 # Training loop
 
 outfile = open('/content/training_log.csv','w')
-outfile.write('step,loss,iou,stage')
+outfile.write('step,loss,iou,stage\n')
 
 for itr in tqdm(range(EPOCHS)):
     with torch.amp.autocast(device_type='cuda'): # cast to mix precision
@@ -229,13 +229,13 @@ for itr in tqdm(range(EPOCHS)):
             if itr==0: mean_iou=0
             mean_iou = mean_iou * 0.99 + 0.01 * np.mean(iou.cpu().detach().numpy())
             print("step",itr, "Accuracy(IOU)=",mean_iou)
-            outfile.write(f'{itr},{loss},{mean_iou},train')
+            outfile.write(f'{itr},{loss},{mean_iou},train\n')
 
 
             if itr % 20==0 and itr > 1:
                 print('____________________________________\n\tvalidating\n____________________________________\n')
                 val_loss, val_iou = validation_loop(test_data)
-                outfile.write(f'{itr},{val_loss},{val_iou},test')
+                outfile.write(f'{itr},{val_loss},{val_iou},test\n')
                 print('____________________________________\n')
 
 outfile.close()
