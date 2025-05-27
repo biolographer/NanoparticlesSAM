@@ -12,7 +12,7 @@ The original method uses the segment anything model to create segmentation masks
     - can be entered manually if known
 - filtering according to physical particle size (in nanometer)
 
-## Training
+## Fine-tuning
 - Images annotated with olympus software contain embedded mask information
 - Training is set up using random point prompts inside the mask 
 
