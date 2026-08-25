@@ -134,7 +134,6 @@ class Particle_Dataset:
             metadata[kv[0]] = kv[1]
           elif len(kv) > 2:
             metadata[kv[0]] = ' '.join(kv[1:])
-        print 
         return metadata
 
       raw_metadata = textdata[metadata_index:].split('$')
