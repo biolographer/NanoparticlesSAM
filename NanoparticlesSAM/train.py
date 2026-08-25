@@ -18,27 +18,28 @@ from sam2.build_sam import build_sam2
 from sam2.sam2_image_predictor import SAM2ImagePredictor
 
 def get_args():
-    parser = argparse.ArgumentParser(description="Image folder paths for training and testing.")
-    parser.add_argument('--TRAIN_IMAGE_FOLDER', type=str, required=False,
+    parser = argparse.ArgumentParser(description="Paths and settings for SAM2 fine-tuning.")
+    parser.add_argument('--TRAIN_IMAGE_FOLDER', type=str, required=True,
                         help='Path to the training image folder')
-    parser.add_argument('--TEST_IMAGE_FOLDER', type=str, required=False,
+    parser.add_argument('--TEST_IMAGE_FOLDER', type=str, required=True,
                         help='Path to the testing image folder')
-    parser.add_argument('--sam2_checkpoint', type=str, required=False,
-                        help='Path to the SAM2 model checkpoint file')
-    parser.add_argument('--sam2_state_dict', type=str, required=False,
-                        help='Path to the SAM2 state dictionary file')
+    parser.add_argument('--sam2_checkpoint', type=str, required=True,
+                        help='Path to the base SAM2 model checkpoint file')
+    parser.add_argument('--CHECKPOINT_DIR', type=str, required=True,
+                        help='Directory to save training checkpoints to')
+    parser.add_argument('--LOG_FILE', type=str, required=True,
+                        help='Path to the training log CSV file')
     return parser.parse_args()
 
 args = get_args()
 
-if not args:
-    TRAIN_IMAGE_FOLDER = '/content/drive/MyDrive/shield_data/training data'
-    TEST_IMAGE_FOLDER = '/content/drive/MyDrive/shield_data/testing data'
-    sam2_checkpoint = "/content/checkpoints/sam2.1_hiera_tiny.pt"
-else:
-    TRAIN_IMAGE_FOLDER = args.TRAIN_IMAGE_FOLDER
-    TEST_IMAGE_FOLDER = args.TEST_IMAGE_FOLDER
-    sam2_checkpoint = args.sam2_checkpoint
+TRAIN_IMAGE_FOLDER = args.TRAIN_IMAGE_FOLDER
+TEST_IMAGE_FOLDER = args.TEST_IMAGE_FOLDER
+sam2_checkpoint = args.sam2_checkpoint
+CHECKPOINT_DIR = args.CHECKPOINT_DIR
+LOG_FILE = args.LOG_FILE
+
+os.makedirs(CHECKPOINT_DIR, exist_ok=True)
 
 model_cfg = "configs/sam2.1/sam2.1_hiera_t.yaml"
 
@@ -179,7 +180,7 @@ scaler = torch.amp.GradScaler('cuda')
 
 # Training loop
 
-outfile = open('/content/training_log.csv','w')
+outfile = open(LOG_FILE, 'w')
 outfile.write('step,loss,iou,stage\n')
 
 for itr in tqdm(range(EPOCHS)):
@@ -220,8 +221,8 @@ for itr in tqdm(range(EPOCHS)):
             scaler.step(optimizer)
             scaler.update() # Mix precision
 
-            if itr%200==0: 
-              torch.save(predictor.model.state_dict(), f"/content/checkpoints/model_{itr}.torch")
+            if itr%200==0:
+              torch.save(predictor.model.state_dict(), os.path.join(CHECKPOINT_DIR, f"model_{itr}.torch"))
               print("\n************\nsave model\n************\n")
 
             # Display results
